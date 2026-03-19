@@ -185,6 +185,12 @@ body.dark .level-row .bar-wrap{background:#1a2030}
   header,.toolbar,#tc{display:none!important}
 }
 
+/* Page break between reports in bulk print */
+.print-page-break{
+  page-break-after:always;
+  break-after:page;
+}
+
 /* ── PRINT REPORT LAYOUT ── */
 #printArea{display:none} /* content now opens in new window */
 .print-page{
@@ -284,11 +290,29 @@ body.dark .level-row .bar-wrap{background:#1a2030}
   <input type="number" class="fsel" id="selYear" value="2026" min="2020" max="2040" style="width:68px" onchange="loadAnalysis()">
   <div class="sep"></div>
   <button class="btn btn-success" onclick="printClassReport()">🖨️ Class Report</button>
+  <button class="btn btn-primary" id="printAllBtn" onclick="confirmPrintAll()" style="display:none">🖨️ Print All Reports</button>
 </div>
 
 <!-- CONTENT -->
 <div class="outer" id="mainContent">
   <div class="empty-msg"><div class="ei">📈</div><p>Select <strong>Grade</strong> and <strong>Stream</strong> to view analysis</p></div>
+</div>
+
+<!-- PRINT ALL CONFIRMATION MODAL -->
+<div class="modal-overlay" id="printAllModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title">🖨️ Print All Student Reports</div>
+      <button class="close-btn" onclick="closePrintAllModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="printAllSummary"></div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn btn-outline" onclick="closePrintAllModal()">Cancel</button>
+      <button class="btn btn-primary" id="doPrintAllBtn" onclick="printAllReports()">🖨️ Print All</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL -->
@@ -430,6 +454,27 @@ function toast(msg,type='ok'){
 
 let allResults = [], allStudents = [];
 let currentStudent = null;
+
+// ── Read URL params from admin quick-launch ──
+(function(){
+  const p = new URLSearchParams(window.location.search);
+  const grade  = p.get('grade');
+  const stream = p.get('stream');
+  const term   = p.get('term');
+  const year   = p.get('year');
+  if(grade)  el('selGrade').value = grade;
+  if(term)   el('selTerm').value  = term;
+  if(year)   el('selYear').value  = year;
+  if(grade && stream){
+    // Pre-populate stream selector then load
+    const ss = el('selStream');
+    ss.innerHTML = `<option value="${stream}">${stream}</option>`;
+    ss.disabled  = false;
+    ss.value     = stream;
+    // Auto-load after short delay so DOM is ready
+    setTimeout(loadAnalysis, 100);
+  }
+})();
 
 // ── Grade → streams ──
 window.onGradeChange = async function(){
@@ -780,6 +825,10 @@ function renderAnalysis(grade,stream,term,year){
 
   // Store for print
   window._printData = {grade,stream,term,year,ranked,resMap,scored,classAvg,levelCounts,subjectStats};
+
+  // Show Print All button only when there are results
+  const btn = el('printAllBtn');
+  if(btn) btn.style.display = scored.length ? 'inline-flex' : 'none';
 }
 
 // ── Tab switching ──
@@ -901,6 +950,77 @@ window.closeModal = function(){
   currentStudent=null;
 };
 el('stuModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+// ── Confirm Print All modal ──
+function confirmPrintAll(){
+  const pd = window._printData;
+  if(!pd || !pd.scored.length){ toast('No results to print','err'); return; }
+  const {grade,stream,term,year,scored,ranked,classAvg} = pd;
+  const total = scored.length;
+  const noResults = allStudents.length - total;
+
+  el('printAllSummary').innerHTML = `
+    <div style="background:var(--alight);border:1px solid #c7d9ff;border-radius:var(--r2);padding:14px 16px;margin-bottom:14px">
+      <div style="font-family:'Familjen Grotesk',sans-serif;font-size:22px;font-weight:800;color:var(--accent)">${total} Report${total>1?'s':''} Ready</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">${grade} ${stream} &nbsp;·&nbsp; ${term} ${year}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;text-align:center">
+        <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Students</div>
+        <div style="font-family:'Familjen Grotesk',sans-serif;font-size:24px;font-weight:800;color:#059669">${total}</div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;text-align:center">
+        <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Class Avg</div>
+        <div style="font-family:'Familjen Grotesk',sans-serif;font-size:24px;font-weight:800;color:var(--accent)">${classAvg}%</div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;text-align:center">
+        <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Skipped</div>
+        <div style="font-family:'Familjen Grotesk',sans-serif;font-size:24px;font-weight:800;color:${noResults>0?'#d97706':'#9aaabb'}">${noResults}</div>
+      </div>
+    </div>
+    ${noResults > 0 ? `<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:var(--r2);padding:9px 12px;font-size:12px;color:#92400e;margin-bottom:12px">
+      ⚠️ ${noResults} enrolled student${noResults>1?'s':''} have no marks saved — they will be skipped.
+    </div>` : ''}
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;border-top:1px solid var(--border);padding-top:12px">
+      Reports will be sorted by <strong>class position (rank)</strong>.<br>
+      Each report includes: subject scores, overall %, CBC level, class position, class comparison and signature lines.<br>
+      Each student gets their own page.
+    </div>`;
+
+  el('printAllModal').classList.add('open');
+}
+
+function closePrintAllModal(){
+  el('printAllModal').classList.remove('open');
+}
+
+function printAllReports(){
+  const pd = window._printData;
+  if(!pd) return;
+  closePrintAllModal();
+
+  const {ranked, resMap, classAvg} = pd;
+  const total = ranked.length;
+
+  let allHtml = '';
+  ranked.forEach((s, i) => {
+    const rec = resMap[s.id];
+    if(!rec || !rec.overallAvg) return;
+    const avg  = Number(rec.overallAvg).toFixed(1);
+    const lv   = getLevel(Number(avg));
+    const rank = i + 1;
+
+    allHtml += buildStudentPrintHtml(s, rec, avg, lv, rank, total, pd);
+
+    // Page break between reports (not after last)
+    if(i < ranked.length - 1){
+      allHtml += '<div style="page-break-after:always;break-after:page"></div>';
+    }
+  });
+
+  triggerPrint(`<div id="all-reports">${allHtml}</div>`);
+  toast(`Opening ${total} reports for print…`, 'info');
+}
 
 // ── Print helper — opens a clean new window for reliable preview ──
 function triggerPrint(html){
