@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CBE School Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Familjen+Grotesk:wght@700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#060d1f;--navy2:#0c1628;--navy3:#111f38;--navy4:#172444;
+  --line:#1e3055;--line2:#253a62;
+  --text:#e8eef8;--text2:#8ba0c0;--text3:#3d5070;
+  --accent:#1a56db;--accent2:#2d6ef0;
+  --gold:#f0a500;--gold2:#fbbf24;
+  --green:#059669;--green2:#10b981;
+  --sh:0 2px 8px rgba(0,0,0,.4);--sh2:0 16px 48px rgba(0,0,0,.6);
+}
+/* ── LIGHT MODE ── */
+body.light{
+  --navy:#f0f4fb;--navy2:#ffffff;--navy3:#f3f6fc;--navy4:#e8edf8;
+  --line:#dce3f0;--line2:#c8d3e8;
+  --text:#131c2e;--text2:#4f6080;--text3:#9aaabb;
+  --sh:0 2px 8px rgba(0,0,0,.06);--sh2:0 16px 48px rgba(0,0,0,.1);
+}
+body.light .bg-grid{background-image:linear-gradient(rgba(26,86,219,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(26,86,219,.04) 1px,transparent 1px)}
+body.light .bg-glow-1{background:radial-gradient(circle,rgba(26,86,219,.07) 0%,transparent 65%)}
+body.light .bg-glow-2{background:radial-gradient(circle,rgba(240,165,0,.05) 0%,transparent 65%)}
+body.light .topbar{background:rgba(240,244,251,.95);border-bottom-color:var(--line)}
+body.light .sc-live{color:var(--green)}
+body.light .hero-title .hl{background:linear-gradient(135deg,var(--accent),#d97706);-webkit-background-clip:text;background-clip:text}
+body.light .hero-eyebrow{color:var(--gold)}
+body.light .portal-desc{color:var(--text2)}
+body.light .fn-text{color:var(--text2)}
+body.light .footer{border-top-color:var(--line)}
+
+/* ── THEME TOGGLE BTN ── */
+.theme-btn{
+  width:34px;height:34px;border-radius:8px;border:1px solid var(--line2);
+  background:var(--navy3);color:var(--text2);
+  display:grid;place-items:center;cursor:pointer;
+  font-size:15px;transition:all .15s;flex-shrink:0;
+}
+.theme-btn:hover{background:var(--navy4);border-color:var(--line);color:var(--text)}
+
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--navy);color:var(--text);font-size:13px;min-height:100vh;overflow-x:hidden;transition:background .2s,color .2s}
+
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(26,86,219,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(26,86,219,.05) 1px,transparent 1px);background-size:48px 48px}
+.bg-glow-1{position:fixed;top:-200px;left:-200px;width:700px;height:700px;background:radial-gradient(circle,rgba(26,86,219,.12) 0%,transparent 65%);pointer-events:none;z-index:0}
+.bg-glow-2{position:fixed;bottom:-150px;right:-100px;width:500px;height:500px;background:radial-gradient(circle,rgba(240,165,0,.07) 0%,transparent 65%);pointer-events:none;z-index:0}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(6,13,31,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.tb-brand{display:flex;align-items:center;gap:12px}
+.tb-logo{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),#3b82f6);border-radius:8px;display:grid;place-items:center;font-size:17px;box-shadow:0 3px 12px rgba(26,86,219,.4);flex-shrink:0}
+.tb-name{font-family:'Familjen Grotesk',sans-serif;font-size:15px;font-weight:800;letter-spacing:-.3px}
+.tb-sub{font-size:9.5px;color:var(--text3);font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-badge{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;padding:3px 10px;border-radius:3px;letter-spacing:.5px;border:1px solid var(--line2);color:var(--text2)}
+.tb-date{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+
+/* HERO */
+.hero{position:relative;z-index:1;padding:64px 32px 48px;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:48px}
+.hero-left{animation:slideIn .5s cubic-bezier(.22,1,.36,1) both}
+@keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:none}}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:7px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+.hero-eyebrow::before{content:'';width:20px;height:1px;background:var(--gold)}
+.hero-title{font-family:'Familjen Grotesk',sans-serif;font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.05;letter-spacing:-.5px;margin-bottom:16px}
+.hero-title .hl{background:linear-gradient(135deg,#3b82f6,var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{font-size:14px;color:var(--text2);line-height:1.7;max-width:420px;margin-bottom:28px}
+.hero-stats{display:flex;gap:24px;flex-wrap:wrap}
+.hstat{display:flex;flex-direction:column;gap:2px;padding-left:12px;border-left:2px solid var(--line2)}
+.hstat-val{font-family:'Familjen Grotesk',sans-serif;font-size:22px;font-weight:800;color:var(--text)}
+.hstat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.hero-right{position:relative;animation:fadeUp .6s .1s cubic-bezier(.22,1,.36,1) both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* STATUS CARD */
+.status-card{background:var(--navy2);border:1px solid var(--line);border-radius:12px;padding:20px}
+.sc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.sc-title{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.sc-live{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--green2);font-weight:600}
+.sc-live::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green2);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sc-modules{display:flex;flex-direction:column;gap:8px}
+.sc-mod{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--navy3);border-radius:7px;border:1px solid var(--line);transition:border-color .15s}
+.sc-mod:hover{border-color:var(--line2)}
+.sc-mod-icon{font-size:16px;flex-shrink:0}
+.sc-mod-info{flex:1}
+.sc-mod-name{font-size:12px;font-weight:600;color:var(--text)}
+.sc-mod-desc{font-size:10.5px;color:var(--text3);margin-top:1px}
+.sc-mod-status{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:3px;font-family:'DM Mono',monospace;letter-spacing:.3px;flex-shrink:0}
+.st-active{background:rgba(5,150,105,.15);color:var(--green2);border:1px solid rgba(16,185,129,.2)}
+.st-restricted{background:rgba(240,165,0,.1);color:var(--gold2);border:1px solid rgba(251,191,36,.2)}
+
+/* PORTALS */
+.portals-section{position:relative;z-index:1;padding:0 32px 80px;max-width:1100px;margin:0 auto}
+.section-label{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.section-label span{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
+.section-label::before{content:'';height:1px;width:32px;background:var(--line2)}
+.section-label::after{content:'';flex:1;height:1px;background:var(--line)}
+.portals{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+
+.portal{background:var(--navy2);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s,border-color .2s;animation:fadeUp .4s ease both;cursor:pointer}
+.portal:nth-child(1){animation-delay:.05s}
+.portal:nth-child(2){animation-delay:.12s}
+.portal:nth-child(3){animation-delay:.19s}
+.portal:hover{transform:translateY(-4px);box-shadow:var(--sh2);border-color:var(--line2)}
+
+.portal-stripe{height:3px}
+.portal.admin    .portal-stripe{background:linear-gradient(90deg,var(--accent),#3b82f6)}
+.portal.admission .portal-stripe{background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.portal.teacher  .portal-stripe{background:linear-gradient(90deg,var(--green),var(--green2))}
+
+.portal-head{padding:20px 20px 14px}
+.portal-icon-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.portal-icon{width:46px;height:46px;border-radius:10px;display:grid;place-items:center;font-size:22px;flex-shrink:0}
+.portal.admin    .portal-icon{background:rgba(26,86,219,.15);box-shadow:0 2px 10px rgba(26,86,219,.2)}
+.portal.admission .portal-icon{background:rgba(240,165,0,.12);box-shadow:0 2px 10px rgba(240,165,0,.15)}
+.portal.teacher  .portal-icon{background:rgba(5,150,105,.12);box-shadow:0 2px 10px rgba(5,150,105,.15)}
+
+.portal-access{font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:3px;font-family:'DM Mono',monospace;letter-spacing:.4px}
+.portal.admin    .portal-access{background:rgba(26,86,219,.15);color:#7eb3ff;border:1px solid rgba(26,86,219,.25)}
+.portal.admission .portal-access{background:rgba(240,165,0,.12);color:var(--gold2);border:1px solid rgba(240,165,0,.2)}
+.portal.teacher  .portal-access{background:rgba(5,150,105,.12);color:var(--green2);border:1px solid rgba(5,150,105,.2)}
+
+.portal-title{font-family:'Familjen Grotesk',sans-serif;font-size:18px;font-weight:800;margin-bottom:5px}
+.portal-desc{font-size:12px;color:var(--text2);line-height:1.6}
+
+.portal-fns{padding:0 20px 16px;flex:1;display:flex;flex-direction:column;gap:6px}
+.fn-item{display:flex;align-items:flex-start;gap:9px;padding:8px 10px;border-radius:6px;background:var(--navy3);border:1px solid var(--line);transition:background .12s,border-color .12s}
+.portal:hover .fn-item{border-color:var(--line2)}
+.fn-arrow{font-family:'DM Mono',monospace;font-size:10px;flex-shrink:0;margin-top:2px}
+.portal.admin    .fn-arrow{color:#7eb3ff}
+.portal.admission .fn-arrow{color:var(--gold2)}
+.portal.teacher  .fn-arrow{color:var(--green2)}
+.fn-text{font-size:12px;font-weight:500;color:var(--text2);line-height:1.5}
+.fn-text strong{color:var(--text);font-weight:700;display:block;margin-bottom:1px}
+
+.portal-btn{margin:0 20px 20px;padding:10px;border-radius:7px;font-family:'Familjen Grotesk',sans-serif;font-size:14px;font-weight:800;cursor:pointer;border:none;width:calc(100% - 40px);display:flex;align-items:center;justify-content:space-between;transition:all .15s;letter-spacing:.1px}
+.portal.admin    .portal-btn{background:var(--accent);color:#fff}
+.portal.admin    .portal-btn:hover{background:var(--accent2);box-shadow:0 4px 16px rgba(26,86,219,.4)}
+.portal.admission .portal-btn{background:rgba(240,165,0,.15);color:var(--gold2);border:1px solid rgba(240,165,0,.3)}
+.portal.admission .portal-btn:hover{background:rgba(240,165,0,.25)}
+.portal.teacher  .portal-btn{background:rgba(5,150,105,.15);color:var(--green2);border:1px solid rgba(5,150,105,.3)}
+.portal.teacher  .portal-btn:hover{background:rgba(5,150,105,.25)}
+.btn-arrow{font-size:16px;transition:transform .15s}
+.portal:hover .btn-arrow{transform:translateX(4px)}
+
+/* FOOTER */
+.footer{position:relative;z-index:1;border-top:1px solid var(--line);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.footer-left{font-size:11.5px;color:var(--text3);font-family:'DM Mono',monospace}
+.footer-right{display:flex;gap:16px}
+.footer-link{font-size:11.5px;color:var(--text3);text-decoration:none;transition:color .12s}
+.footer-link:hover{color:var(--text2)}
+
+@media(max-width:900px){.portals{grid-template-columns:1fr}}
+@media(max-width:768px){.hero{grid-template-columns:1fr;padding:40px 20px 32px;gap:32px}.portals-section{padding:0 20px 60px}.topbar{padding:0 16px}.footer{padding:14px 16px}}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow-1"></div>
+<div class="bg-glow-2"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-brand">
+    <div class="tb-logo" id="tbLogo">📊</div>
+    <div>
+      <div class="tb-name" id="schoolNameDisplay">CBE Mark Sheet</div>
+      <div class="tb-sub" id="schoolTaglineDisplay">Junior School · Kenya CBC</div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <div class="tb-badge">CBC SYSTEM</div>
+    <div class="tb-date" id="dateDisplay"></div>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">Kenya CBC · Grades 7 – 9</div>
+    <h1 class="hero-title">School<br>Management<br><span class="hl">System</span></h1>
+    <p class="hero-desc">A complete digital platform for CBC mark entry, student admission, teacher management, and academic reporting — built for Junior School.</p>
+    <div class="hero-stats">
+      <div class="hstat"><div class="hstat-val">3</div><div class="hstat-lbl">Portals</div></div>
+      <div class="hstat"><div class="hstat-val">9</div><div class="hstat-lbl">Subjects</div></div>
+      <div class="hstat"><div class="hstat-val">8</div><div class="hstat-lbl">CBC Levels</div></div>
+      <div class="hstat"><div class="hstat-val">☁️</div><div class="hstat-lbl">Cloud Sync</div></div>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="status-card">
+      <div class="sc-header">
+        <span class="sc-title">System Modules</span>
+        <span class="sc-live">LIVE</span>
+      </div>
+      <div class="sc-modules">
+        <div class="sc-mod">
+          <span class="sc-mod-icon">⚙️</span>
+          <div class="sc-mod-info">
+            <div class="sc-mod-name">Admin Dashboard</div>
+            <div class="sc-mod-desc">Teacher management · System settings</div>
+          </div>
+          <span class="sc-mod-status st-active">ACTIVE</span>
+        </div>
+        <div class="sc-mod">
+          <span class="sc-mod-icon">🎓</span>
+          <div class="sc-mod-info">
+            <div class="sc-mod-name">Admission Portal</div>
+            <div class="sc-mod-desc">Student registration · Class assignment</div>
+          </div>
+          <span class="sc-mod-status st-restricted">RESTRICTED</span>
+        </div>
+        <div class="sc-mod">
+          <span class="sc-mod-icon">📊</span>
+          <div class="sc-mod-info">
+            <div class="sc-mod-name">Teacher Dashboard</div>
+            <div class="sc-mod-desc">Marks entry · Class reports</div>
+          </div>
+          <span class="sc-mod-status st-active">ACTIVE</span>
+        </div>
+        <div class="sc-mod">
+          <span class="sc-mod-icon">🏫</span>
+          <div class="sc-mod-info">
+            <div class="sc-mod-name">School Settings</div>
+            <div class="sc-mod-desc">Branding · Streams · Configuration</div>
+          </div>
+          <span class="sc-mod-status st-restricted">ADMIN ONLY</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PORTALS -->
+<div class="portals-section">
+  <div class="section-label"><span>Select your portal</span></div>
+  <div class="portals">
+
+    <!-- ADMIN -->
+    <div class="portal admin" onclick="window.location.href='admin.html'">
+      <div class="portal-stripe"></div>
+      <div class="portal-head">
+        <div class="portal-icon-row">
+          <div class="portal-icon">⚙️</div>
+          <span class="portal-access">ADMIN ONLY</span>
+        </div>
+        <div class="portal-title">Admin Dashboard</div>
+        <div class="portal-desc">Full system control for school administrators and secretaries.</div>
+      </div>
+      <div class="portal-fns">
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>Manage Users</strong>Approve, suspend or reassign teacher accounts</div></div>
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>View Reports</strong>Access marks and results across all classes</div></div>
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>Monitor System</strong>Track activity, configure grades and streams</div></div>
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>School Settings</strong>Branding, logo, motto and print headers</div></div>
+      </div>
+      <button class="portal-btn"><span>Enter Admin Portal</span><span class="btn-arrow">→</span></button>
+    </div>
+
+    <!-- ADMISSION -->
+    <div class="portal admission" onclick="window.location.href='admission.html'">
+      <div class="portal-stripe"></div>
+      <div class="portal-head">
+        <div class="portal-icon-row">
+          <div class="portal-icon">🎓</div>
+          <span class="portal-access">RESTRICTED</span>
+        </div>
+        <div class="portal-title">Admission Page</div>
+        <div class="portal-desc">Student registration and class assignment for admission officers.</div>
+      </div>
+      <div class="portal-fns">
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>Add New Student</strong>Register with full details and parent contacts</div></div>
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>Assign Class</strong>Place student in the correct grade and stream</div></div>
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>Admission Number</strong>Generate and track unique admission numbers</div></div>
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>Student Records</strong>Edit, search and export student data as CSV</div></div>
+      </div>
+      <button class="portal-btn"><span>Open Admission Page</span><span class="btn-arrow">→</span></button>
+    </div>
+
+    <!-- TEACHER -->
+    <div class="portal teacher" onclick="window.location.href='login.html'">
+      <div class="portal-stripe"></div>
+      <div class="portal-head">
+        <div class="portal-icon-row">
+          <div class="portal-icon">📊</div>
+          <span class="portal-access">TEACHER LOGIN</span>
+        </div>
+        <div class="portal-title">Teacher Dashboard</div>
+        <div class="portal-desc">Mark entry and class reporting for class teachers.</div>
+      </div>
+      <div class="portal-fns">
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>View Students</strong>See your assigned class roster automatically</div></div>
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>Enter Marks</strong>CBC-aligned mark entry with live level calculation</div></div>
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>Class Reports</strong>View overall averages and performance levels</div></div>
+        <div class="fn-item"><span class="fn-arrow">→</span><div class="fn-text"><strong>Save Results</strong>Sync marks to the cloud in real time</div></div>
+      </div>
+      <button class="portal-btn"><span>Teacher Sign In</span><span class="btn-arrow">→</span></button>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-left" id="footerSchool">CBE School Management System · Kenya CBC</div>
+  <div class="footer-right">
+    <a href="settings.html" class="footer-link">⚙️ Settings</a>
+    <a href="admin.html" class="footer-link">Admin</a>
+    <a href="admission.html" class="footer-link">Admission</a>
+    <a href="login.html" class="footer-link">Teacher Login</a>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyBdabXqlBQ-6yVNJKdu8Zhb9Cm_-59_u24",
+  authDomain:"bett-294a2.firebaseapp.com",
+  projectId:"bett-294a2",
+  storageBucket:"bett-294a2.appspot.com",
+  messagingSenderId:"1055511650032",
+  appId:"1:1055511650032:web:7e0f9c28e58515f549ac35"
+});
+const db = firebase.firestore();
+
+// Date
+(function(){
+  const d = new Date();
+  document.getElementById('dateDisplay').textContent =
+    d.toLocaleDateString('en-KE',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+})();
+
+// Load school settings
+(async function(){
+  try{
+    const raw = localStorage.getItem('cbe_school_settings');
+    if(raw){
+      const {data,ts} = JSON.parse(raw);
+      if(Date.now()-ts < 3600000){ applySchool(data); return; }
+    }
+    const snap = await db.collection('settings').doc('school').get();
+    if(snap.exists){
+      const data = snap.data();
+      localStorage.setItem('cbe_school_settings',JSON.stringify({data,ts:Date.now()}));
+      applySchool(data);
+    }
+  }catch(e){}
+})();
+
+// ── THEME TOGGLE ──
+function toggleTheme(){
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('themeBtn').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('cbe_index_theme', isLight ? 'light' : 'dark');
+}
+
+// Apply saved theme immediately
+(function(){
+  const saved = localStorage.getItem('cbe_index_theme');
+  if(saved === 'light'){
+    document.body.classList.add('light');
+    // btn not ready yet at parse time — set after DOM ready
+    document.addEventListener('DOMContentLoaded', function(){
+      const btn = document.getElementById('themeBtn');
+      if(btn) btn.textContent = '☀️';
+    });
+  }
+})();
+
+function applySchool(s){
+  if(!s) return;
+  if(s.name){
+    document.title = s.name + ' | CBC System';
+    document.getElementById('schoolNameDisplay').textContent = s.name;
+    document.getElementById('footerSchool').textContent = s.name + ' · CBC System · Kenya';
+  }
+  if(s.county){
+    document.getElementById('schoolTaglineDisplay').textContent = s.county + ' · Kenya CBC';
+  }
+  if(s.logoUrl){
+    const lm = document.getElementById('tbLogo');
+    lm.innerHTML = '<img src="'+s.logoUrl+'" style="width:100%;height:100%;object-fit:contain;border-radius:inherit" onerror="this.parentElement.innerHTML=\'📊\'">';
+  }
+  if(s.primaryColor){
+    document.documentElement.style.setProperty('--accent',s.primaryColor);
+    document.documentElement.style.setProperty('--accent2',s.primaryColor);
+  }
+}
+</script>
+</body>
+</html>
