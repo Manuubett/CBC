@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CBE Admin | Teacher Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Familjen+Grotesk:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#e8ecf4;--surface:#fff;--surf2:#f3f5fa;--border:#dce1ec;
+  --text:#131c2e;--text2:#4f6080;--text3:#9aaabb;
+  --accent:#1a56db;--ah:#1447c0;--alight:#eff4ff;
+  --green:#059669;--green-bg:#d1fae5;--green-tx:#065f46;
+  --amber:#d97706;--amber-bg:#fef3c7;--amber-tx:#92400e;
+  --red:#dc2626;--red-bg:#fee2e2;--red-tx:#991b1b;
+  --sh:0 1px 3px rgba(0,0,0,.06);--sh2:0 8px 28px rgba(0,0,0,.12);
+  --r:10px;--r2:6px;
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
+
+/* ══════════════════════════════════════
+   LOADING SCREEN
+══════════════════════════════════════ */
+#screenLoad{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:14px;z-index:900;
+}
+#screenLoad .spin{width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .65s linear infinite}
+#screenLoad p{font-size:12px;color:var(--text3);font-weight:600;letter-spacing:.3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ══════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════ */
+#screenLogin{
+  display:none;min-height:100vh;
+  align-items:center;justify-content:center;
+  padding:20px;position:relative;overflow:hidden;
+}
+#screenLogin.show{display:flex}
+
+/* subtle grid bg */
+#screenLogin::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:32px 32px;opacity:.5;pointer-events:none;
+}
+.login-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);box-shadow:var(--sh2);
+  width:100%;max-width:380px;position:relative;overflow:hidden;
+  animation:cardIn .4s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:none}}
+.login-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--accent),#3b82f6,#0ea5e9);
+}
+.lc-head{padding:28px 28px 20px;text-align:center}
+.lc-brand{display:inline-flex;align-items:center;gap:10px;margin-bottom:16px}
+.lc-icon{
+  width:40px;height:40px;background:var(--accent);border-radius:10px;
+  display:grid;place-items:center;font-size:20px;
+  box-shadow:0 4px 14px rgba(26,86,219,.35);
+}
+.lc-name{font-family:'Familjen Grotesk',sans-serif;font-size:15px;font-weight:800;letter-spacing:-.3px}
+.lc-sub{font-size:10px;color:var(--text3)}
+.lc-title{font-family:'Familjen Grotesk',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px}
+.lc-desc{font-size:12px;color:var(--text2)}
+.lc-badge{
+  display:inline-block;margin-top:8px;
+  background:var(--alight);color:var(--accent);border:1px solid #c7d9ff;
+  font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;letter-spacing:.4px;
+}
+.lc-body{padding:0 28px 28px}
+
+/* form inputs */
+.field{margin-bottom:14px}
+.field label{
+  display:block;font-size:11px;font-weight:700;
+  color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;
+}
+.inp-wrap{position:relative}
+.inp-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;opacity:.45}
+.inp{
+  width:100%;height:40px;padding:0 12px 0 34px;
+  border:1.5px solid var(--border);border-radius:var(--r2);
+  font-family:inherit;font-size:13px;color:var(--text);background:var(--surface);
+  outline:none;transition:border-color .15s,box-shadow .15s;
+}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+.inp::placeholder{color:var(--text3)}
+.inp.has-eye{padding-right:36px}
+.eye-btn{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;font-size:14px;color:var(--text3);padding:2px;
+  transition:color .12s;
+}
+.eye-btn:hover{color:var(--text2)}
+
+/* alert */
+.alert{
+  display:none;align-items:flex-start;gap:8px;
+  padding:9px 12px;border-radius:var(--r2);
+  font-size:12px;font-weight:500;line-height:1.5;margin-bottom:14px;
+}
+.alert.show{display:flex}
+.alert.err{background:var(--red-bg);border:1px solid #fca5a5;color:var(--red-tx)}
+
+/* submit */
+.submit-btn{
+  width:100%;height:42px;
+  background:linear-gradient(135deg,var(--accent),#2563eb);
+  color:#fff;border:none;border-radius:var(--r2);
+  font-family:'Familjen Grotesk',sans-serif;
+  font-size:15px;font-weight:800;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:all .15s;box-shadow:0 4px 14px rgba(26,86,219,.3);
+}
+.submit-btn:hover:not(:disabled){background:linear-gradient(135deg,var(--ah),#1d4ed8);transform:translateY(-1px)}
+.submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.spin-sm{width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite}
+
+.lc-foot{
+  padding:12px 28px;background:var(--surf2);border-top:1px solid var(--border);
+  text-align:center;font-size:11px;color:var(--text3);
+}
+.lc-foot a{color:var(--accent);font-weight:700;text-decoration:none}
+.lc-foot a:hover{text-decoration:underline}
+
+/* ══════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════ */
+#screenDash{display:none}
+#screenDash.show{display:block}
+
+/* header */
+header{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;box-shadow:var(--sh);
+}
+.logo{display:flex;align-items:center;gap:9px}
+.lm{width:30px;height:30px;background:var(--accent);border-radius:7px;display:grid;place-items:center;color:#fff;font-size:15px}
+.lt{font-family:'Familjen Grotesk',sans-serif;font-size:14px;font-weight:800;letter-spacing:-.3px}
+.ls{font-size:10px;color:var(--text3)}
+.hdr-r{display:flex;align-items:center;gap:8px}
+.admin-badge{
+  background:var(--alight);color:var(--accent);border:1px solid #c7d9ff;
+  font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.3px;
+}
+
+/* buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;padding:5px 13px;
+  border-radius:var(--r2);font-family:inherit;font-size:12.5px;font-weight:600;
+  cursor:pointer;border:none;transition:all .14s;white-space:nowrap;height:32px;
+}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--ah)}
+.btn-outline{background:none;border:1.5px solid var(--border);color:var(--text2)}
+.btn-outline:hover{background:var(--bg);color:var(--text)}
+.btn-sm{padding:3px 9px;font-size:11.5px;height:26px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* outer */
+.outer{padding:20px 24px;max-width:1200px;margin:0 auto}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:22px}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:4px;
+  animation:fadeUp .3s ease both;
+}
+.stat-card:nth-child(2){animation-delay:.05s}
+.stat-card:nth-child(3){animation-delay:.1s}
+.stat-card:nth-child(4){animation-delay:.15s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.stat-icon{font-size:20px;margin-bottom:2px}
+.stat-val{font-family:'Familjen Grotesk',sans-serif;font-size:28px;font-weight:800;line-height:1}
+.stat-lbl{font-size:10.5px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.s-active   .stat-val{color:var(--green)}
+.s-pending  .stat-val{color:var(--amber)}
+.s-suspended.stat-val,.s-suspended .stat-val{color:var(--red)}
+
+/* sec head */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+.sec-title{font-family:'Familjen Grotesk',sans-serif;font-size:16px;font-weight:800}
+.sec-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.search-wrap{position:relative}
+.search-wrap input{
+  height:32px;padding:0 10px 0 30px;
+  border:1.5px solid var(--border);border-radius:var(--r2);
+  font-family:inherit;font-size:12.5px;color:var(--text);background:var(--surface);
+  outline:none;width:200px;transition:border-color .14s;
+}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap::before{content:'🔍';position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none;opacity:.5}
+.fsel{
+  height:32px;padding:0 9px;border:1.5px solid var(--border);border-radius:var(--r2);
+  font-family:inherit;font-size:12.5px;color:var(--text);background:var(--surface);cursor:pointer;outline:none;
+}
+.fsel:focus{border-color:var(--accent)}
+
+/* table */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;animation:fadeUp .35s .1s ease both}
+.tbl-scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:700px}
+thead th{
+  background:#1e2d4d;color:#c8d8f8;
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+  padding:0 14px;text-align:left;height:34px;white-space:nowrap;border-bottom:1px solid #2d3e61;
+}
+thead th.tc{text-align:center}
+tbody td{padding:0 14px;height:46px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surf2)}
+tbody td.tc{text-align:center}
+.t-name{font-weight:700}
+.t-email{font-size:11.5px;color:var(--text3)}
+.t-meta{font-size:11.5px;color:var(--text2)}
+
+/* status badge */
+.sbadge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700}
+.sbadge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.sbadge.active   {background:var(--green-bg);color:var(--green-tx)}.sbadge.active::before{background:var(--green)}
+.sbadge.pending  {background:var(--amber-bg);color:var(--amber-tx)}.sbadge.pending::before{background:var(--amber)}
+.sbadge.suspended{background:var(--red-bg);color:var(--red-tx)}.sbadge.suspended::before{background:var(--red)}
+
+/* action buttons */
+.act-wrap{display:flex;align-items:center;gap:5px;justify-content:flex-end}
+.act-btn{padding:3px 10px;border-radius:5px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;border:none;transition:all .12s;white-space:nowrap}
+.act-approve {background:var(--green-bg);color:var(--green-tx)}.act-approve:hover{background:#a7f3d0}
+.act-suspend {background:var(--red-bg);color:var(--red-tx)}.act-suspend:hover{background:#fecaca}
+.act-activate{background:var(--alight);color:var(--accent)}.act-activate:hover{background:#c7d9ff}
+.act-edit    {background:var(--surf2);color:var(--text2);border:1px solid var(--border)}.act-edit:hover{background:var(--bg)}
+.act-delete  {background:none;color:var(--text3);border:none;font-size:14px;padding:3px 6px;line-height:1}.act-delete:hover{color:var(--red)}
+
+/* empty row */
+.empty-row td{text-align:center;padding:44px;color:var(--text3)}
+.empty-icon{font-size:30px;margin-bottom:8px}
+
+/* ── MODALS ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);z-index:500;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh2);width:100%;max-width:440px;animation:modalIn .22s cubic-bezier(.22,1,.36,1) both}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:none}}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:'Familjen Grotesk',sans-serif;font-size:15px;font-weight:800}
+.modal-close{background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);line-height:1;padding:2px}.modal-close:hover{color:var(--text)}
+.modal-body{padding:20px}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.minp{width:100%;height:36px;padding:0 10px;border:1.5px solid var(--border);border-radius:var(--r2);font-family:inherit;font-size:13px;color:var(--text);background:var(--surface);outline:none;transition:border-color .14s}
+.minp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+select.minp{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239aaabb'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.mfield{margin-bottom:14px}
+.mfield label{display:block;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.confirm-icon{font-size:36px;text-align:center;margin-bottom:10px}
+.confirm-msg{font-size:13px;color:var(--text2);text-align:center;line-height:1.7}
+
+/* toast */
+#tc{position:fixed;top:62px;right:16px;z-index:999;display:flex;flex-direction:column;gap:6px}
+.t{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:var(--r2);font-size:12.5px;font-weight:500;box-shadow:var(--sh2);animation:tin .25s ease;min-width:210px}
+.t.ok {background:#064e3b;color:#ecfdf5;border-left:3px solid #10b981}
+.t.err{background:#7f1d1d;color:#fef2f2;border-left:3px solid #ef4444}
+.t.info{background:#1e3a5f;color:#dbeafe;border-left:3px solid var(--accent)}
+@keyframes tin {from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes tout{to{transform:translateX(110%);opacity:0}}
+</style>
+</head>
+<body>
+
+<div id="tc"></div>
+
+<!-- ══════════ LOADING ══════════ -->
+<div id="screenLoad">
+  <div class="spin"></div>
+  <p>VERIFYING ACCESS…</p>
+</div>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div id="screenLogin">
+  <div class="login-card">
+    <div class="lc-head">
+      <div class="lc-brand">
+        <div class="lc-icon">⚙️</div>
+        <div>
+          <div class="lc-name">CBE Mark Sheet</div>
+          <div class="lc-sub">Junior School · Kenya CBC</div>
+        </div>
+      </div>
+      <div class="lc-title">Admin Portal</div>
+      <div class="lc-desc">Sign in to manage teachers and access</div>
+      <div class="lc-badge">🔒 RESTRICTED ACCESS</div>
+    </div>
+
+    <div class="lc-body">
+      <div class="alert err" id="loginErr">
+        <span>⚠️</span><span id="loginErrMsg"></span>
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <div class="inp-wrap">
+          <span class="inp-icon">✉️</span>
+          <input class="inp" type="email" id="liEmail" placeholder="admin@school.ac.ke" autocomplete="email">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <div class="inp-wrap">
+          <span class="inp-icon">🔑</span>
+          <input class="inp has-eye" type="password" id="liPass" placeholder="••••••••" autocomplete="current-password">
+          <button class="eye-btn" onclick="toggleEye()" tabindex="-1">👁️</button>
+        </div>
+      </div>
+
+      <button class="submit-btn" id="loginBtn" onclick="doLogin()">
+        <span id="loginBtnTxt">Sign In to Admin</span>
+      </button>
+    </div>
+
+    <div class="lc-foot">
+      Teacher portal? <a href="login.html">Sign in here →</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ DASHBOARD ══════════ -->
+<div id="screenDash">
+
+  <!-- EDIT MODAL -->
+  <div class="overlay" id="editOverlay">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">✏️ Edit Teacher</div>
+        <button class="modal-close" onclick="closeEdit()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="mfield"><label>First Name</label><input class="minp" type="text" id="eFirst"></div>
+          <div class="mfield"><label>Last Name</label><input class="minp" type="text" id="eLast"></div>
+        </div>
+        <div class="mfield"><label>TSC Number</label><input class="minp" type="text" id="eTSC" placeholder="Optional"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="mfield">
+            <label>Grade</label>
+            <select class="minp" id="eGrade" onchange="onEditGradeChange()">
+              <option value="">-- Grade --</option>
+              <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+            </select>
+          </div>
+          <div class="mfield">
+            <label>Stream</label>
+            <select class="minp" id="eStream">
+              <option value="">-- Select Grade first --</option>
+            </select>
+            <span id="eStreamHint" style="font-size:10.5px;color:var(--text3);margin-top:3px;display:block"></span>
+          </div>
+        </div>
+        <div class="mfield">
+          <label>Status</label>
+          <select class="minp" id="eStatus">
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-outline" onclick="closeEdit()">Cancel</button>
+        <button class="btn btn-primary" id="editSaveBtn" onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRM MODAL -->
+  <div class="overlay" id="delOverlay">
+    <div class="modal" style="max-width:360px">
+      <div class="modal-head">
+        <div class="modal-title">🗑️ Delete Teacher</div>
+        <button class="modal-close" onclick="closeDel()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-icon">⚠️</div>
+        <div class="confirm-msg">
+          Remove <strong id="delName"></strong> from the system?<br><br>
+          <span style="font-size:11.5px;color:var(--text3)">This deletes their Firestore profile. To fully remove their login, delete them from Firebase Console → Authentication.</span>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-outline" onclick="closeDel()">Cancel</button>
+        <button class="btn" style="background:var(--red);color:#fff" id="delConfirmBtn" onclick="confirmDelete()">Delete Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="lm">⚙️</div>
+      <div><div class="lt">CBE Admin</div><div class="ls">Teacher Management · Junior School</div></div>
+    </div>
+    <div class="hdr-r">
+      <span class="admin-badge">ADMIN</span>
+      <span id="adminName" style="font-size:11.5px;color:var(--text2);font-weight:600"></span>
+      <a href="settings.html" class="btn btn-outline btn-sm">⚙️ Settings</a>
+      <a href="admission.html" class="btn btn-outline btn-sm">🎓 Admission</a>
+      <a href="marksheet.html" class="btn btn-outline btn-sm">📊 Mark Sheet</a>
+      <button class="btn btn-outline btn-sm" style="color:#ef4444;border-color:rgba(239,68,68,.3)" onclick="doLogout()">🚪 Sign Out</button>
+    </div>
+  </header>
+
+  <div class="outer">
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-val" id="statTotal">—</div>
+        <div class="stat-lbl">Total Teachers</div>
+      </div>
+      <div class="stat-card s-active">
+        <div class="stat-icon">✅</div>
+        <div class="stat-val" id="statActive">—</div>
+        <div class="stat-lbl">Active</div>
+      </div>
+      <div class="stat-card s-pending">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-val" id="statPending">—</div>
+        <div class="stat-lbl">Pending Approval</div>
+      </div>
+      <div class="stat-card s-suspended">
+        <div class="stat-icon">🚫</div>
+        <div class="stat-val" id="statSuspended">—</div>
+        <div class="stat-lbl">Suspended</div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="sec-head">
+      <div class="sec-title">Teachers</div>
+      <div class="sec-tools">
+        <div class="search-wrap">
+          <input type="text" id="searchInp" placeholder="Search name, email, class…" oninput="renderTable()">
+        </div>
+        <select class="fsel" id="filterStatus" onchange="renderTable()">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="pending">Pending</option>
+          <option value="suspended">Suspended</option>
+        </select>
+        <select class="fsel" id="filterGrade" onchange="renderTable()">
+          <option value="">All Grades</option>
+          <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="loadTeachers()">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Teacher</th>
+              <th>TSC No.</th>
+              <th>Class</th>
+              <th class="tc">Status</th>
+              <th>Registered</th>
+              <th class="tc">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="teacherTbody">
+            <tr class="empty-row"><td colspan="7"><div class="empty-icon">⏳</div><div>Loading…</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /screenDash -->
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script>
+firebase.initializeApp({
+
+apiKey: "AIzaSyBdabXqlBQ-6yVNJKdu8Zhb9Cm_-59_u24",
+      authDomain: "bett-294a2.firebaseapp.com",
+      projectId: "bett-294a2",
+      storageBucket: "bett-294a2.appspot.com",
+      messagingSenderId: "1055511650032",
+      appId: "1:1055511650032:web:7e0f9c28e58515f549ac35"
+
+  
+});
+const db   = firebase.firestore();
+const auth = firebase.auth();
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(()=>{});
+
+let allTeachers = [], editingUid = null, deletingUid = null;
+const el = id => document.getElementById(id);
+
+// ── SCREEN SWITCHER ──
+function show(screen){
+  ['screenLoad','screenLogin','screenDash'].forEach(s=>{
+    const node = el(s);
+    node.style.display = 'none';
+    node.classList.remove('show');
+  });
+  const target = el('screen'+screen);
+  if(screen === 'Load'){
+    target.style.display = 'flex';
+  } else if(screen === 'Login'){
+    target.style.display = 'flex';
+    target.classList.add('show');
+  } else {
+    target.style.display = 'block';
+    target.classList.add('show');
+  }
+}
+
+// ── TOAST ──
+function toast(msg, type='ok'){
+  const t = document.createElement('div');
+  t.className = `t ${type}`;
+  t.innerHTML = `<span>${type==='ok'?'✅':type==='err'?'❌':'ℹ️'}</span>${msg}`;
+  el('tc').appendChild(t);
+  setTimeout(()=>{t.style.animation='tout .25s ease forwards';setTimeout(()=>t.remove(),280);},2800);
+}
+
+// ── AUTH STATE — decide which screen to show ──
+auth.onAuthStateChanged(async u => {
+  if(!u){
+    show('Login');
+    return;
+  }
+  try{
+    const snap = await db.collection('users').doc(u.uid).get();
+    // Reject teachers — admin/secretary only
+    if(!snap.exists || snap.data().role === 'teacher'){
+      await auth.signOut();
+      show('Login');
+      el('loginErrMsg').textContent = 'Access restricted to administrators only.';
+      el('loginErr').classList.add('show');
+      return;
+    }
+    const profile = snap.data();
+    el('adminName').textContent = '👤 ' + (profile.fullName || profile.email || '');
+    show('Dash');
+    loadTeachers();
+    applySchoolSettings(db).catch(()=>{});
+  }catch(e){
+    show('Login');
+  }
+});
+
+// ── EYE TOGGLE ──
+function toggleEye(){
+  const inp = el('liPass');
+  const btn = inp.nextElementSibling;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁️' : '🙈';
+}
+
+// ── LOGIN ──
+async function doLogin(){
+  el('loginErr').classList.remove('show');
+  const email = el('liEmail').value.trim();
+  const pass  = el('liPass').value;
+  if(!email || !pass){
+    el('loginErrMsg').textContent = 'Please enter your email and password.';
+    el('loginErr').classList.add('show');
+    return;
+  }
+  const btn = el('loginBtn');
+  const txt = el('loginBtnTxt');
+  btn.disabled = true;
+  txt.innerHTML = '<div class="spin-sm"></div> Signing in…';
+  try{
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    // Check role before proceeding — onAuthStateChanged handles the rest
+    const snap = await db.collection('users').doc(cred.user.uid).get();
+    if(!snap.exists || snap.data().role === 'teacher'){
+      await auth.signOut();
+      btn.disabled = false;
+      txt.textContent = 'Sign In to Admin';
+      el('loginErrMsg').textContent = 'Access restricted to administrators only.';
+      el('loginErr').classList.add('show');
+      return;
+    }
+    // onAuthStateChanged will switch to Dash
+  }catch(e){
+    btn.disabled = false;
+    txt.textContent = 'Sign In to Admin';
+    const msg = e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'
+      ? 'Incorrect email or password.'
+      : e.code==='auth/too-many-requests'
+      ? 'Too many attempts. Try again later.'
+      : e.message;
+    el('loginErrMsg').textContent = msg;
+    el('loginErr').classList.add('show');
+  }
+}
+el('liPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+// ── LOGOUT ──
+async function doLogout(){
+  clearSessionCache();
+  await auth.signOut();
+  // onAuthStateChanged will switch back to Login
+}
+
+// ══════════════════════════════════════════════
+// SHARED COMPUTER SECURITY
+// ══════════════════════════════════════════════
+
+const SESSION_TIMEOUT_MS  = 30 * 60 * 1000; // 30 minutes idle
+const SESSION_WARNING_MS  = 2  * 60 * 1000; // warn 2 minutes before
+let   _idleTimer = null, _warnTimer = null, _warnEl = null;
+
+// ── Clear only user-session data on logout ──
+// Keeps: cbe_theme, cbe_school_settings (non-sensitive)
+// Clears: streams cache, any user-specific state
+function clearSessionCache(){
+  ['cbe_streams','cbe_streams_ts'].forEach(k=>localStorage.removeItem(k));
+}
+
+// ── Create warning banner (injected into DOM) ──
+function createWarnBanner(){
+  if(document.getElementById('_sessionWarn')) return;
+  const d = document.createElement('div');
+  d.id = '_sessionWarn';
+  d.style.cssText = `
+    display:none;position:fixed;top:0;left:0;right:0;z-index:9999;
+    background:#7f1d1d;color:#fef2f2;font-family:inherit;
+    padding:10px 20px;font-size:13px;font-weight:600;
+    display:none;align-items:center;justify-content:space-between;gap:12px;
+    border-bottom:2px solid #ef4444;
+  `;
+  d.innerHTML = `
+    <span>⚠️ Your session will expire in <span id="_sessionCountdown">2:00</span> due to inactivity.</span>
+    <div style="display:flex;gap:8px">
+      <button onclick="_keepAlive()" style="padding:4px 12px;background:#059669;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:700;font-size:12px">Stay Logged In</button>
+      <button onclick="doLogout()" style="padding:4px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:4px;cursor:pointer;font-size:12px">Sign Out Now</button>
+    </div>`;
+  document.body.prepend(d);
+  _warnEl = d;
+}
+
+// ── Reset idle timer on any user activity ──
+function _resetIdleTimer(){
+  clearTimeout(_idleTimer);
+  clearTimeout(_warnTimer);
+  if(_warnEl) _warnEl.style.display = 'none';
+
+  // Warn 2 min before timeout
+  _warnTimer = setTimeout(()=>{
+    createWarnBanner();
+    _warnEl.style.display = 'flex';
+    // Countdown tick
+    let secs = SESSION_WARNING_MS / 1000;
+    const tick = setInterval(()=>{
+      secs--;
+      const el = document.getElementById('_sessionCountdown');
+      if(el) el.textContent = Math.floor(secs/60)+':'+(secs%60).toString().padStart(2,'0');
+      if(secs <= 0) clearInterval(tick);
+    }, 1000);
+  }, SESSION_TIMEOUT_MS - SESSION_WARNING_MS);
+
+  // Auto-logout after full timeout
+  _idleTimer = setTimeout(()=>{
+    doLogout();
+  }, SESSION_TIMEOUT_MS);
+}
+
+window._keepAlive = function(){
+  _resetIdleTimer();
+};
+
+// ── Listen for activity ──
+['mousemove','keydown','click','touchstart','scroll'].forEach(evt=>{
+  document.addEventListener(evt, _resetIdleTimer, {passive:true});
+});
+
+// ── Start timer immediately ──
+_resetIdleTimer();
+
+
+// ── LOAD TEACHERS ──
+async function loadTeachers(){
+  el('teacherTbody').innerHTML = `<tr class="empty-row"><td colspan="7"><div class="empty-icon">⏳</div><div>Loading…</div></td></tr>`;
+  try{
+    const snap = await db.collection('users').where('role','==','teacher').orderBy('createdAt','desc').get();
+    allTeachers = [];
+    snap.forEach(d => allTeachers.push({uid:d.id,...d.data()}));
+    updateStats();
+    renderTable();
+  }catch(e){
+    el('teacherTbody').innerHTML = `<tr class="empty-row"><td colspan="7"><div class="empty-icon">❌</div><div>${e.message}</div></td></tr>`;
+  }
+}
+
+// ── STATS ──
+function updateStats(){
+  el('statTotal').textContent     = allTeachers.length;
+  el('statActive').textContent    = allTeachers.filter(t=>t.status==='active').length;
+  el('statPending').textContent   = allTeachers.filter(t=>t.status==='pending').length;
+  el('statSuspended').textContent = allTeachers.filter(t=>t.status==='suspended').length;
+}
+
+// ── RENDER TABLE ──
+function renderTable(){
+  const q  = el('searchInp').value.trim().toLowerCase();
+  const fs = el('filterStatus').value;
+  const fg = el('filterGrade').value;
+  const list = allTeachers.filter(t=>{
+    const mq = !q||[t.fullName,t.email,t.grade,t.stream,t.tscNumber].some(v=>(v||'').toLowerCase().includes(q));
+    return mq && (!fs||t.status===fs) && (!fg||t.grade===fg);
+  });
+  if(!list.length){
+    el('teacherTbody').innerHTML=`<tr class="empty-row"><td colspan="7"><div class="empty-icon">👤</div><div>No teachers found</div></td></tr>`;
+    return;
+  }
+  el('teacherTbody').innerHTML = list.map((t,i)=>{
+    const date = t.createdAt?.toDate ? t.createdAt.toDate().toLocaleDateString('en-KE',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const sc = t.status||'pending';
+    const sl = sc.charAt(0).toUpperCase()+sc.slice(1);
+    let actions='';
+    if(sc==='pending'){
+      actions+=`<button class="act-btn act-approve" onclick="setStatus('${t.uid}','active')">✅ Approve</button>`;
+      actions+=`<button class="act-btn act-suspend" onclick="setStatus('${t.uid}','suspended')">🚫 Reject</button>`;
+    } else if(sc==='active'){
+      actions+=`<button class="act-btn act-suspend" onclick="setStatus('${t.uid}','suspended')">🚫 Suspend</button>`;
+    } else {
+      actions+=`<button class="act-btn act-activate" onclick="setStatus('${t.uid}','active')">✅ Reinstate</button>`;
+    }
+    actions+=`<button class="act-btn act-edit" onclick="openEdit('${t.uid}')">✏️ Edit</button>`;
+    actions+=`<button class="act-btn act-delete" onclick="openDel('${t.uid}')" title="Delete">🗑️</button>`;
+    return `<tr>
+      <td style="color:var(--text3);font-size:11px;font-weight:700">${i+1}</td>
+      <td><div class="t-name">${t.fullName||'—'}</div><div class="t-email">${t.email||''}</div></td>
+      <td class="t-meta">${t.tscNumber||'—'}</td>
+      <td class="t-meta"><strong>${t.grade||'—'}</strong> · ${t.stream||'—'}</td>
+      <td class="tc"><span class="sbadge ${sc}">${sl}</span></td>
+      <td class="t-meta">${date}</td>
+      <td><div class="act-wrap">${actions}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── SET STATUS ──
+async function setStatus(uid, newStatus){
+  const t = allTeachers.find(x=>x.uid===uid);
+  if(!t) return;
+  try{
+    await db.collection('users').doc(uid).update({status:newStatus});
+    t.status = newStatus;
+    updateStats();
+    renderTable();
+    const labels={active:'activated ✅',suspended:'suspended 🚫',pending:'set to pending'};
+    toast(`${t.fullName} ${labels[newStatus]||newStatus}`);
+  }catch(e){ toast('Update failed: '+e.message,'err'); }
+}
+
+// ── EDIT MODAL ──
+async function openEdit(uid){
+  const t = allTeachers.find(x=>x.uid===uid);
+  if(!t) return;
+  editingUid=uid;
+  el('eFirst').value=t.firstName||'';
+  el('eLast').value=t.lastName||'';
+  el('eTSC').value=t.tscNumber||'';
+  el('eGrade').value=t.grade||'';
+  el('eStatus').value=t.status||'pending';
+  el('editOverlay').classList.add('open');
+  // Load streams for this grade, then set current stream
+  await onEditGradeChange(t.stream||'');
+}
+
+// ── Load streams dynamically for edit modal ──
+async function onEditGradeChange(preselect=''){
+  const grade = el('eGrade').value;
+  const ss    = el('eStream');
+  const hint  = el('eStreamHint');
+  ss.innerHTML = '<option value="">Loading…</option>';
+  if(!grade){
+    ss.innerHTML='<option value="">-- Select Grade first --</option>';
+    if(hint) hint.textContent='';
+    return;
+  }
+
+  let streams = [];
+
+  // 1. Check localStorage cache
+  try{
+    const raw = localStorage.getItem('cbe_streams');
+    if(raw){ const map=JSON.parse(raw); if(map[grade]?.length) streams=map[grade]; }
+  }catch(_){}
+
+  // 2. Always fetch live from Firestore
+  try{
+    const snap = await db.collection('students').where('grade','==',grade).get();
+    const set  = new Set(streams);
+    snap.forEach(d=>{ const s=d.data(); if(s.stream?.trim()) set.add(s.stream.trim()); });
+    streams = [...set].sort();
+    // Update cache
+    try{
+      const raw=localStorage.getItem('cbe_streams');
+      const map=raw?JSON.parse(raw):{};
+      map[grade]=streams;
+      localStorage.setItem('cbe_streams',JSON.stringify(map));
+      localStorage.setItem('cbe_streams_ts',Date.now().toString());
+    }catch(_){}
+  }catch(_){}
+
+  if(!streams.length){
+    ss.innerHTML='<option value="">No streams found</option>';
+    if(hint){ hint.textContent='No streams for this grade yet.'; hint.style.color='var(--red)'; }
+  } else {
+    ss.innerHTML='<option value="">-- Select Stream --</option>'+
+      streams.map(s=>`<option value="${s}"${s===preselect?' selected':''}>${s}</option>`).join('');
+    if(hint){ hint.textContent=`${streams.length} stream${streams.length>1?'s':''} available`; hint.style.color='var(--green)'; }
+    // If preselect not found (e.g. teacher had a stream that was removed), keep blank
+    if(preselect && !streams.includes(preselect)){
+      ss.innerHTML='<option value="'+preselect+'">'+preselect+' (current)</option>'+
+        streams.map(s=>`<option value="${s}">${s}</option>`).join('');
+    }
+  }
+}
+function closeEdit(){ el('editOverlay').classList.remove('open'); editingUid=null; }
+
+async function saveEdit(){
+  if(!editingUid) return;
+  const first=el('eFirst').value.trim(), last=el('eLast').value.trim();
+  const grade=el('eGrade').value, stream=el('eStream').value;
+  const status=el('eStatus').value, tsc=el('eTSC').value.trim();
+  if(!first||!last){toast('Name required','err');return;}
+  if(!grade||!stream){toast('Grade and stream required','err');return;}
+  const btn=el('editSaveBtn');
+  btn.disabled=true; btn.textContent='Saving…';
+  try{
+    const upd={firstName:first,lastName:last,fullName:`${first} ${last}`,grade,stream,status,tscNumber:tsc||null};
+    await db.collection('users').doc(editingUid).update(upd);
+    Object.assign(allTeachers.find(x=>x.uid===editingUid), upd);
+    updateStats(); renderTable(); closeEdit();
+    toast(`${first} ${last} updated`);
+  }catch(e){ toast('Save failed: '+e.message,'err'); }
+  btn.disabled=false; btn.textContent='Save Changes';
+}
+
+// ── DELETE MODAL ──
+function openDel(uid){
+  const t=allTeachers.find(x=>x.uid===uid);
+  if(!t) return;
+  deletingUid=uid;
+  el('delName').textContent=t.fullName||t.email||uid;
+  el('delOverlay').classList.add('open');
+}
+function closeDel(){ el('delOverlay').classList.remove('open'); deletingUid=null; }
+
+async function confirmDelete(){
+  if(!deletingUid) return;
+  const btn=el('delConfirmBtn');
+  btn.disabled=true; btn.textContent='Deleting…';
+  try{
+    await db.collection('users').doc(deletingUid).delete();
+    allTeachers=allTeachers.filter(x=>x.uid!==deletingUid);
+    updateStats(); renderTable(); closeDel();
+    toast('Teacher profile deleted');
+  }catch(e){ toast('Delete failed: '+e.message,'err'); }
+  btn.disabled=false; btn.textContent='Delete Profile';
+}
+
+// ── CLOSE ON BACKDROP / ESC ──
+el('editOverlay').addEventListener('click',e=>{ if(e.target===el('editOverlay')) closeEdit(); });
+el('delOverlay').addEventListener('click', e=>{ if(e.target===el('delOverlay'))  closeDel();  });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeEdit();closeDel();} });
+</script>
+<script src="school-settings.js"></script>
+</body>
+</html>
