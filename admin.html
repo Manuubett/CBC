@@ -189,6 +189,26 @@ header{
 .s-pending  .stat-val{color:var(--amber)}
 .s-suspended.stat-val,.s-suspended .stat-val{color:var(--red)}
 
+/* ── QUICK REPORTS ── */
+.quick-reports{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);box-shadow:var(--sh);
+  margin-bottom:22px;overflow:hidden;
+  animation:fadeUp .3s .2s ease both;
+}
+.qr-head{
+  padding:12px 18px;background:var(--surf2);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:8px;
+}
+.qr-title{font-family:'Familjen Grotesk',sans-serif;font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px}
+.qr-body{padding:14px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.qr-lbl{font-size:11px;color:var(--text3);font-weight:700}
+
+/* ── RESULTS STAT CARD ── */
+.stat-card.s-results .stat-val{color:var(--accent)}
+
 /* sec head */
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px}
 .sec-title{font-family:'Familjen Grotesk',sans-serif;font-size:16px;font-weight:800}
@@ -414,6 +434,7 @@ select.minp{cursor:pointer;appearance:none;background-image:url("data:image/svg+
       <a href="settings.html" class="btn btn-outline btn-sm">⚙️ Settings</a>
       <a href="admission.html" class="btn btn-outline btn-sm">🎓 Admission</a>
       <a href="marksheet.html" class="btn btn-outline btn-sm">📊 Mark Sheet</a>
+      <a href="analysis.html" class="btn btn-outline btn-sm">📈 Analysis</a>
       <button class="btn btn-outline btn-sm" style="color:#ef4444;border-color:rgba(239,68,68,.3)" onclick="doLogout()">🚪 Sign Out</button>
     </div>
   </header>
@@ -441,6 +462,38 @@ select.minp{cursor:pointer;appearance:none;background-image:url("data:image/svg+
         <div class="stat-icon">🚫</div>
         <div class="stat-val" id="statSuspended">—</div>
         <div class="stat-lbl">Suspended</div>
+      </div>
+      <div class="stat-card s-results">
+        <div class="stat-icon">📈</div>
+        <div class="stat-val" id="statResults">—</div>
+        <div class="stat-lbl">Results Saved</div>
+      </div>
+    </div>
+
+    <!-- QUICK REPORTS -->
+    <div class="quick-reports">
+      <div class="qr-head">
+        <div class="qr-title">📈 Quick Analysis — Jump to any class report</div>
+        <a href="analysis.html" class="btn btn-outline btn-sm">Open Full Analysis →</a>
+      </div>
+      <div class="qr-body">
+        <span class="qr-lbl">Grade</span>
+        <select class="fsel" id="qrGrade" onchange="onQrGradeChange()">
+          <option value="">-- Grade --</option>
+          <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+        </select>
+        <span class="qr-lbl">Stream</span>
+        <select class="fsel" id="qrStream" disabled>
+          <option value="">-- Stream --</option>
+        </select>
+        <span class="qr-lbl">Term</span>
+        <select class="fsel" id="qrTerm">
+          <option>Term 1</option><option>Term 2</option><option>Term 3</option>
+        </select>
+        <span class="qr-lbl">Year</span>
+        <input type="number" class="fsel" id="qrYear" value="2026" min="2020" max="2040" style="width:72px">
+        <button class="btn btn-primary btn-sm" onclick="openAnalysis()">📈 View Analysis</button>
+        <button class="btn btn-outline btn-sm" onclick="openMarkSheet()">📊 Open Mark Sheet</button>
       </div>
     </div>
 
@@ -559,6 +612,7 @@ auth.onAuthStateChanged(async u => {
     el('adminName').textContent = '👤 ' + (profile.fullName || profile.email || '');
     show('Dash');
     loadTeachers();
+    loadResultsCount();
     applySchoolSettings(db).catch(()=>{});
   }catch(e){
     show('Login');
@@ -697,6 +751,67 @@ window._keepAlive = function(){
 _resetIdleTimer();
 
 
+// ── LOAD RESULTS COUNT ──
+async function loadResultsCount(){
+  try{
+    const snap = await db.collection('results').get();
+    el('statResults').textContent = snap.size;
+  }catch(e){ el('statResults').textContent = '?'; }
+}
+
+// ── QR: Grade change → load streams ──
+async function onQrGradeChange(){
+  const grade = el('qrGrade').value;
+  const ss = el('qrStream');
+  ss.disabled = true;
+  ss.innerHTML = '<option value="">Loading…</option>';
+  if(!grade){ ss.innerHTML='<option value="">-- Stream --</option>'; return; }
+
+  let streams = [];
+  try{
+    const raw = localStorage.getItem('cbe_streams');
+    if(raw){ const map=JSON.parse(raw); if(map[grade]?.length) streams=map[grade]; }
+  }catch(_){}
+  try{
+    const snap = await db.collection('students').where('grade','==',grade).get();
+    const set = new Set(streams);
+    snap.forEach(d=>{ const s=d.data(); if(s.stream?.trim()) set.add(s.stream.trim()); });
+    streams = [...set].sort();
+  }catch(_){}
+
+  ss.innerHTML = '<option value="">-- Stream --</option>' +
+    streams.map(s=>`<option>${s}</option>`).join('');
+  ss.disabled = false;
+}
+
+// ── Open analysis page for selected grade/stream/term/year ──
+function openAnalysis(){
+  const grade  = el('qrGrade').value;
+  const stream = el('qrStream').value;
+  const term   = el('qrTerm').value;
+  const year   = el('qrYear').value;
+  if(!grade||!stream){ toast('Select Grade and Stream first','err'); return; }
+  const params = new URLSearchParams({grade,stream,term,year});
+  window.open(`analysis.html?${params}`, '_blank');
+}
+
+// ── Open mark sheet for selected class ──
+function openMarkSheet(){
+  const grade  = el('qrGrade').value;
+  const stream = el('qrStream').value;
+  if(!grade||!stream){ toast('Select Grade and Stream first','err'); return; }
+  const params = new URLSearchParams({grade,stream});
+  window.open(`marksheet.html?${params}`, '_blank');
+}
+
+// ── Open analysis for a specific teacher's class ──
+function openAnalysisFor(grade, stream){
+  const term = new Date().getMonth() < 4 ? 'Term 1' : new Date().getMonth() < 8 ? 'Term 2' : 'Term 3';
+  const year = new Date().getFullYear();
+  const params = new URLSearchParams({grade,stream,term,year});
+  window.open(`analysis.html?${params}`, '_blank');
+}
+
 // ── LOAD TEACHERS ──
 async function loadTeachers(){
   el('teacherTbody').innerHTML = `<tr class="empty-row"><td colspan="7"><div class="empty-icon">⏳</div><div>Loading…</div></td></tr>`;
@@ -746,6 +861,9 @@ function renderTable(){
       actions+=`<button class="act-btn act-activate" onclick="setStatus('${t.uid}','active')">✅ Reinstate</button>`;
     }
     actions+=`<button class="act-btn act-edit" onclick="openEdit('${t.uid}')">✏️ Edit</button>`;
+    if(t.grade && t.stream){
+      actions+=`<button class="act-btn" style="background:var(--alight);color:var(--accent)" onclick="openAnalysisFor('${t.grade}','${t.stream}')">📈</button>`;
+    }
     actions+=`<button class="act-btn act-delete" onclick="openDel('${t.uid}')" title="Delete">🗑️</button>`;
     return `<tr>
       <td style="color:var(--text3);font-size:11px;font-weight:700">${i+1}</td>
