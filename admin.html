@@ -193,6 +193,30 @@ select.minp{cursor:pointer;appearance:none;background-image:url("data:image/svg+
 .confirm-icon{font-size:36px;text-align:center;margin-bottom:10px}
 .confirm-msg{font-size:13px;color:var(--text2);text-align:center;line-height:1.7}
 
+/* NEW DEVICE WELCOME SCREEN */
+#screenNewDevice{display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden;background:var(--bg)}
+#screenNewDevice.show{display:flex}
+#screenNewDevice::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:32px 32px;opacity:.5;pointer-events:none}
+.nd-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh2);width:100%;max-width:420px;overflow:hidden;animation:cardIn .4s cubic-bezier(.22,1,.36,1) both}
+.nd-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--green),#34d399,var(--accent))}
+.nd-head{padding:28px 28px 18px;text-align:center}
+.nd-icon{width:56px;height:56px;background:linear-gradient(135deg,var(--green-bg),#a7f3d0);border:2px solid #6ee7b7;border-radius:14px;display:grid;place-items:center;font-size:28px;margin:0 auto 14px}
+.nd-title{font-family:'Familjen Grotesk',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px}
+.nd-sub{font-size:12.5px;color:var(--text2);line-height:1.6}
+.nd-school-box{margin:0 24px 18px;background:var(--surf2);border:1.5px solid var(--border);border-radius:var(--r2);padding:14px 16px;text-align:center}
+.nd-school-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.nd-school-name{font-family:'Familjen Grotesk',sans-serif;font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px}
+.nd-school-meta{font-size:11.5px;color:var(--text3)}
+.nd-info-row{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surf2);border-radius:5px;margin-bottom:6px;font-size:12px}
+.nd-info-icon{font-size:14px;flex-shrink:0}
+.nd-info-text{color:var(--text2)}
+.nd-infos{padding:0 24px 18px}
+.nd-actions{padding:0 24px 24px;display:flex;flex-direction:column;gap:8px}
+.nd-confirm-btn{width:100%;height:44px;background:linear-gradient(135deg,var(--green),#047857);color:#fff;border:none;border-radius:var(--r2);font-family:'Familjen Grotesk',sans-serif;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s;box-shadow:0 4px 14px rgba(5,150,105,.3)}
+.nd-confirm-btn:hover{background:linear-gradient(135deg,#047857,#065f46);transform:translateY(-1px)}
+.nd-wrong-btn{width:100%;padding:9px;border-radius:var(--r2);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;background:none;border:1.5px solid var(--border);color:var(--text3);transition:all .15s}
+.nd-wrong-btn:hover{border-color:var(--red);color:var(--red)}
+
 /* TOAST */
 #tc{position:fixed;top:62px;right:16px;z-index:999;display:flex;flex-direction:column;gap:6px}
 .t{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:var(--r2);font-size:12.5px;font-weight:500;box-shadow:var(--sh2);animation:tin .25s ease;min-width:210px}
@@ -239,6 +263,31 @@ select.minp{cursor:pointer;appearance:none;background-image:url("data:image/svg+
       <button class="submit-btn" id="loginBtn" onclick="doLogin()"><span id="loginBtnTxt">Sign In to Admin</span></button>
     </div>
     <div class="lc-foot">Teacher portal? <a href="login.html">Sign in here →</a></div>
+  </div>
+</div>
+
+<!-- NEW DEVICE WELCOME -->
+<div id="screenNewDevice">
+  <div class="nd-card" style="position:relative">
+    <div class="nd-head">
+      <div class="nd-icon">🏫</div>
+      <div class="nd-title">New Device Detected</div>
+      <div class="nd-sub">This is the first time you're using this system on this device. Confirm this is your school before continuing.</div>
+    </div>
+    <div class="nd-school-box">
+      <div class="nd-school-lbl">School configured in this system</div>
+      <div class="nd-school-name" id="ndSchoolName">—</div>
+      <div class="nd-school-meta" id="ndSchoolMeta">—</div>
+    </div>
+    <div class="nd-infos">
+      <div class="nd-info-row"><span class="nd-info-icon">👤</span><span class="nd-info-text">Signed in as <strong id="ndAdminName">—</strong></span></div>
+      <div class="nd-info-row"><span class="nd-info-icon">🔑</span><span class="nd-info-text">School ID: <span id="ndSchoolId" style="font-family:monospace;font-size:11px">—</span></span></div>
+      <div class="nd-info-row"><span class="nd-info-icon">📱</span><span class="nd-info-text">Device: <span id="ndDevice">—</span></span></div>
+    </div>
+    <div class="nd-actions">
+      <button class="nd-confirm-btn" onclick="confirmNewDevice()">✅ Yes, this is my school — Continue</button>
+      <button class="nd-wrong-btn" onclick="doLogout()">❌ Not my school — Sign Out</button>
+    </div>
   </div>
 </div>
 
@@ -439,12 +488,12 @@ const el = id => document.getElementById(id);
 
 // ── SCREEN ──
 function show(s){
-  ['screenLoad','screenLogin','screenDash'].forEach(id=>{
+  ['screenLoad','screenLogin','screenNewDevice','screenDash'].forEach(id=>{
     const n=el(id);if(!n)return;n.style.display='none';n.classList.remove('show');
   });
   const t=el('screen'+s);
   if(s==='Load')t.style.display='flex';
-  else if(s==='Login'){t.style.display='flex';t.classList.add('show');}
+  else if(s==='Login'||s==='NewDevice'){t.style.display='flex';t.classList.add('show');}
   else{t.style.display='block';t.classList.add('show');}
 }
 
@@ -479,36 +528,36 @@ auth.onAuthStateChanged(async u => {
     el('hdrSchoolId').textContent = _schoolId.slice(0,8)+'…';
     el('hdrSchoolId').title = 'School ID: ' + _schoolId;
 
-    // 2. Verify school is configured in Firestore (authoritative — not localStorage)
+    // 2. Verify school is configured in Firestore
     const settingsSnap = await db.collection('settings').doc('school').get();
     if(!settingsSnap.exists || !settingsSnap.data().name){
       window.location.href = 'settings.html'; return;
     }
 
     // 3. Get school name from Firestore only — never from localStorage
-    _schoolName = settingsSnap.data().name;
-    el('hdrSchoolName').textContent = _schoolName;
-    if(settingsSnap.data().primaryColor){
-      document.documentElement.style.setProperty('--accent', settingsSnap.data().primaryColor);
+    const schoolData = settingsSnap.data();
+    _schoolName = schoolData.name;
+
+    // 4. Check if this is a new/unrecognised device
+    // We store a token in localStorage per device after first confirmation
+    // Token is keyed by schoolId so it's school-specific
+    const deviceToken    = localStorage.getItem('cbe_device_' + _schoolId);
+    const isNewDevice    = !deviceToken;
+
+    if(isNewDevice){
+      // Show a one-time confirmation screen before proceeding
+      _pendingSchoolData = schoolData;
+      el('ndSchoolName').textContent = schoolData.name;
+      el('ndSchoolMeta').textContent = [schoolData.county, schoolData.principal].filter(Boolean).join(' · ') || 'Configure in Settings';
+      el('ndAdminName').textContent  = _profile.fullName || _profile.email || '';
+      el('ndSchoolId').textContent   = _schoolId;
+      el('ndDevice').textContent     = gd(navigator.userAgent) + ' · ' + go(navigator.userAgent);
+      show('NewDevice');
+      return; // wait for admin to confirm — confirmNewDevice() continues the flow
     }
-    el('schoolLabel').textContent = '— ' + _schoolName;
 
-    // 4. Session enforcement BEFORE showing dashboard
-    // This blocks login if device limit reached
-    const sessionAllowed = await _enforceSession(u, _profile);
-    if(!sessionAllowed) return; // blocked — error already shown
-
-    // 5. Show dashboard
-    show('Dash');
-    loadTeachers();
-    loadResultsCount();
-    applySchoolSettings(db).catch(()=>{});
-
-    // 6. Payment listener — keyed by schoolId (uid), not school name
-    _listenPayment(_schoolId);
-
-    // 7. Idle timeout
-    _resetIdleTimer();
+    // 5. Known device — proceed directly
+    await _proceedToDashboard(u, schoolData);
 
   }catch(e){
     console.error('Auth error:', e);
@@ -556,6 +605,37 @@ async function doLogout(){
   ['cbe_streams','cbe_streams_ts'].forEach(k=>localStorage.removeItem(k));
   await auth.signOut();
   window.location.href = 'index.html';
+}
+
+let _pendingSchoolData = null;
+
+// ── Called when admin confirms on new device ──
+async function confirmNewDevice(){
+  // Mark this device as known — token keyed by schoolId
+  localStorage.setItem('cbe_device_' + _schoolId, Date.now().toString());
+  const u = auth.currentUser;
+  if(!u){ show('Login'); return; }
+  await _proceedToDashboard(u, _pendingSchoolData);
+}
+
+// ── Proceed to dashboard — shared by both new and returning devices ──
+async function _proceedToDashboard(u, schoolData){
+  el('hdrSchoolName').textContent = schoolData.name;
+  if(schoolData.primaryColor){
+    document.documentElement.style.setProperty('--accent', schoolData.primaryColor);
+  }
+  el('schoolLabel').textContent = '— ' + schoolData.name;
+
+  // Session enforcement BEFORE showing dashboard
+  const sessionAllowed = await _enforceSession(u, _profile);
+  if(!sessionAllowed) return;
+
+  show('Dash');
+  loadTeachers();
+  loadResultsCount();
+  applySchoolSettings(db).catch(()=>{});
+  _listenPayment(_schoolId);
+  _resetIdleTimer();
 }
 
 // ═══════════════════════════════════════════════════════════════
