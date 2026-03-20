@@ -545,15 +545,18 @@ auth.onAuthStateChanged(async u => {
     }
 
     _profile  = snap.data();
-    // schoolId = the admin's own UID — unique, stable, can't be spoofed from frontend
+    // schoolId = the admin's own UID — unique per school, stable, can't be spoofed
     _schoolId = u.uid;
+    window._schoolId = u.uid; // expose for school-settings.js
+    localStorage.setItem('cbe_current_uid', u.uid); // fallback for other pages
 
     el('adminName').textContent = '👤 ' + (_profile.fullName || _profile.email || '');
     el('hdrSchoolId').textContent = _schoolId.slice(0,8)+'…';
     el('hdrSchoolId').title = 'School ID: ' + _schoolId;
 
-    // 2. Verify school is configured in Firestore
-    const settingsSnap = await db.collection('settings').doc('school').get();
+    // 2. Verify school is configured — keyed by schoolId (uid) not shared 'school' doc
+    // Each school has its OWN settings doc: settings/{uid}
+    const settingsSnap = await db.collection('settings').doc(_schoolId).get();
     if(!settingsSnap.exists || !settingsSnap.data().name){
       window.location.href = 'settings.html'; return;
     }
