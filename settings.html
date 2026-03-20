@@ -421,9 +421,11 @@ auth.onAuthStateChanged(async u => {
     buildColorPresets();
     buildStreamsGrid();
     buildCountyDropdown(); // ← added: populate county dropdown
-    loadSettings();
     // ── ADDITIONS (do not affect existing functionality) ──
-    _currentUid = u.uid;
+    _currentUid = u.uid; // must be set BEFORE loadSettings so path is correct
+    window._schoolId = u.uid; // expose for school-settings.js
+    localStorage.setItem('cbe_current_uid', u.uid);
+    loadSettings();
     checkFirstSetup(snap.data());          // show setup banner if needed
     listenOwnerMessages(u.uid);            // real-time owner message listener
   }catch(e){
@@ -577,7 +579,8 @@ function updatePreview(){
 // ── Load existing settings ──
 async function loadSettings(){
   try{
-    const snap = await db.collection('settings').doc('school').get();
+    // Load THIS school's settings — keyed by admin uid, not shared 'school' doc
+    const snap = await db.collection('settings').doc(_currentUid).get();
     if(!snap.exists){ toast('No settings saved yet — fill in and save below','info'); return; }
     const s = snap.data();
 
@@ -635,7 +638,8 @@ async function saveSettings(){
       updatedAt:   firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    await db.collection('settings').doc('school').set(data, {merge:true});
+    // Save to THIS school's own settings doc — keyed by admin uid
+    await db.collection('settings').doc(_currentUid).set(data, {merge:true});
 
     // Clear cache so all pages pick up new settings
     localStorage.removeItem('cbe_school_settings');
