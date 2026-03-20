@@ -628,21 +628,36 @@ async function _checkAndShowPayGate(u, schoolData){
 
   // Set school name on pay gate
   el('pgSchoolName').textContent = schoolData.name || '—';
+  // Also update school name in pay gate each time (handles name changes)
+  if(schoolData.county){
+    el('pgSchoolName').textContent = (schoolData.name||'—') + ' · ' + schoolData.county;
+  }
 
   // Listen to approvedSchools/{schoolId} in real-time
   // This means: even if admin refreshes, they see the gate until owner approves
   _payGateUnsub = db.collection('approvedSchools').doc(_schoolId)
     .onSnapshot(async snap => {
 
-      // No doc yet — register school as pending, show payment gate
+      // No doc yet — school has set up but not yet paid
+      // Create pending doc with full school details from Firestore settings
       if(!snap.exists){
         db.collection('approvedSchools').doc(_schoolId).set({
-          uid: _schoolId,
-          schoolName: schoolData.name || '—',
-          county: schoolData.county || '—',
-          status: 'pending',
+          uid:        _schoolId,
+          schoolName: schoolData.name    || '—',
+          county:     schoolData.county  || '—',
+          subCounty:  schoolData.subCounty || '',
+          principal:  schoolData.principal || '',
+          status:     'pending',
           detectedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, {merge:true}).catch(()=>{});
+        // Log to owner activity
+        db.collection('ownerLog').add({
+          type:'new_school_detected',
+          message:'New school: ' + (schoolData.name||'Unknown'),
+          school: schoolData.name || '—',
+          color: 'amber',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(()=>{});
         el('pgMsgBox').style.display = 'none';
         show('PayGate');
         return;
