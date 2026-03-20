@@ -207,7 +207,7 @@ textarea.inp{height:auto;padding:9px 11px;resize:vertical;min-height:70px}
   </div>
   <div class="hdr-r">
     <span class="admin-badge">ADMIN</span>
-    <a href="admin1.html" class="btn btn-outline btn-sm">👥 Teachers</a>
+    <a href="admin.html" class="btn btn-outline btn-sm">👥 Teachers</a>
     <a href="marksheet.html" class="btn btn-outline btn-sm">📊 Mark Sheet</a>
     <button class="btn btn-outline btn-sm" style="color:#ef4444;border-color:rgba(239,68,68,.3)" onclick="doLogout()">🚪 Sign Out</button>
   </div>
@@ -408,12 +408,12 @@ const PRESETS = [
 
 // ── Auth gate — admin only ── (ORIGINAL — UNCHANGED)
 auth.onAuthStateChanged(async u => {
-  if(!u){ window.location.href='admin1.html'; return; }
+  if(!u){ window.location.href='admin.html'; return; }
   try{
     const snap = await db.collection('users').doc(u.uid).get();
     if(!snap.exists || snap.data().role === 'teacher'){
       await auth.signOut();
-      window.location.href='admin1.html';
+      window.location.href='admin.html';
       return;
     }
     el('pageLoader').style.display='none';
@@ -427,7 +427,7 @@ auth.onAuthStateChanged(async u => {
     checkFirstSetup(snap.data());          // show setup banner if needed
     listenOwnerMessages(u.uid);            // real-time owner message listener
   }catch(e){
-    window.location.href='admin1.html';
+    window.location.href='admin.html';
   }
 });
 
@@ -643,7 +643,20 @@ async function saveSettings(){
 
     toast('Settings saved successfully ✅');
 
-    // ── ADDITION: mark schoolSetupDone on first save ──
+    // ── Stamp school name into approvedSchools so owner always sees real name ──
+    // Done on EVERY save so it stays in sync when school updates their name
+    if(_currentUid){
+      db.collection('approvedSchools').doc(_currentUid).set({
+        schoolName: data.name,
+        county:     data.county || '—',
+        subCounty:  data.subCounty || '',
+        principal:  data.principal || '',
+        uid:        _currentUid,
+        updatedAt:  firebase.firestore.FieldValue.serverTimestamp()
+      }, {merge:true}).catch(()=>{});
+    }
+
+    // ── Mark schoolSetupDone on first save and redirect to admin ──
     if(_isFirstSetup && _currentUid){
       try{
         await db.collection('users').doc(_currentUid).update({
@@ -660,8 +673,8 @@ async function saveSettings(){
         }).catch(()=>{});
         _isFirstSetup = false;
         el('setupBanner').style.display = 'none';
-        // Redirect to admin dashboard after first setup
-        setTimeout(()=>{ window.location.href='admin1.html'; }, 1400);
+        // Redirect to admin dashboard — payment gate runs there
+        setTimeout(()=>{ window.location.href='admin.html'; }, 1200);
       }catch(_){}
     }
   }catch(e){
@@ -674,7 +687,7 @@ async function saveSettings(){
 // ── Logout ──
 async function doLogout(){
   await auth.signOut();
-  window.location.href = 'admin1.html';
+  window.location.href = 'admin.html';
 }
 
 // ════════════════════════════════════════════
