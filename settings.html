@@ -645,23 +645,33 @@ async function saveSettings(){
     localStorage.removeItem('cbe_school_settings');
     syncStreamsCache();
 
-    toast('Settings saved successfully ✅');
+    toast('✅ Settings saved — redirecting to dashboard…');
 
     // ── Stamp school name into approvedSchools so owner always sees real name ──
     // Done on EVERY save so it stays in sync when school updates their name
     if(_currentUid){
-      db.collection('approvedSchools').doc(_currentUid).set({
-        schoolName: data.name,
-        county:     data.county || '—',
-        subCounty:  data.subCounty || '',
-        principal:  data.principal || '',
-        uid:        _currentUid,
-        updatedAt:  firebase.firestore.FieldValue.serverTimestamp()
-      }, {merge:true}).catch(()=>{});
+      // Write school info to approvedSchools — owner sees this as a new request
+      // detectedAt only set if doc doesn't exist yet (preserve original timestamp)
+      db.collection('approvedSchools').doc(_currentUid).get().then(doc => {
+        const payload = {
+          schoolName: data.name,
+          county:     data.county   || '—',
+          subCounty:  data.subCounty || '',
+          principal:  data.principal || '',
+          uid:        _currentUid,
+          status:     doc.exists && doc.data().status ? doc.data().status : 'pending',
+          updatedAt:  firebase.firestore.FieldValue.serverTimestamp()
+        };
+        // Only set detectedAt on first creation
+        if(!doc.exists || !doc.data().detectedAt){
+          payload.detectedAt = firebase.firestore.FieldValue.serverTimestamp();
+        }
+        return db.collection('approvedSchools').doc(_currentUid).set(payload, {merge:true});
+      }).catch(()=>{});
     }
 
-    // ── Mark schoolSetupDone on first save and redirect to admin ──
-    if(_isFirstSetup && _currentUid){
+    // ── Mark schoolSetupDone (always, not just first time) ──
+    if(_currentUid){
       try{
         await db.collection('users').doc(_currentUid).update({
           school:          data.name,
@@ -669,18 +679,24 @@ async function saveSettings(){
           schoolSetupDone: true,
           updatedAt:       firebase.firestore.FieldValue.serverTimestamp()
         });
+      }catch(_){}
+
+      // Log first setup to owner
+      if(_isFirstSetup){
         db.collection('ownerLog').add({
-          type:'school_setup', message:'School setup: '+data.name,
+          type:'school_setup', message:'New school setup: '+data.name,
           school:data.name, county:data.county||'',
           adminUid:_currentUid, color:'green',
           createdAt:firebase.firestore.FieldValue.serverTimestamp()
         }).catch(()=>{});
         _isFirstSetup = false;
         el('setupBanner').style.display = 'none';
-        // Redirect to admin dashboard — payment gate runs there
-        setTimeout(()=>{ window.location.href='admin.html'; }, 1200);
-      }catch(_){}
+      }
     }
+
+    // ── Always redirect to admin after save ──
+    setTimeout(()=>{ window.location.href='admin.html'; }, 1000);
+
   }catch(e){
     toast('Save failed: '+e.message,'err');
   }
